@@ -1,0 +1,486 @@
+0:00
+In this lesson, we'll build an agent from scratch.
+0:04
+You'll see that all agents can do fairly complex tasks.
+0:07
+A basic agent is actually not that hard to build.
+0:11
+As we're building this agent,
+0:12
+it will be useful to notice what jobs fall to the LLM
+0:16
+and which are managed by the code around the LLM.
+0:19
+What we call the runtime.
+0:21
+Let's dive in.
+0:24
+The agent we're going to build from
+0:25
+scratch is based on the ReAct pattern.
+0:28
+ReAct stands for reasoning plus acting.
+0:32
+So in this pattern, an LLM first thinks
+0:36
+about what to do and then decides an action to take.
+0:40
+That action is then executed in an environment
+0:43
+and an observation is returned. With that observation,
+0:47
+The LLM then repeats.
+0:49
+So, then thinks about what to do again, decides another action
+0:52
+to take, and continues until it decides that it is done.
+0:57
+The code that we will be using to start
+0:59
+with, is based on this blog post from Simon Willison.
+1:03
+It's a great introduction to implementing the ReAct
+1:06
+pattern in Python.
+1:09
+To get started, let's import everything we need.
+1:13
+We can then initialize the language model.
+1:16
+For this, we will use OpenAI.
+1:21
+Let's try it out once
+1:22
+just to make sure that it's working.
+1:35
+We can see that we pass in hello, world and get back.
+1:38
+"Hello. How can I assist you today?"
+1:40
+Great.
+1:40
+We're set up and running with our language model.
+1:43
+Let's now create the agent.
+1:46
+We'll start by creating a class for the agent.
+1:50
+We'll want this agent to be parameterized by a system message.
+1:55
+So we'll allow the user to pass that in.
+1:57
+We'll then save that as an attribute.
+2:00
+We'll also
+2:01
+keep track of a list of messages over time.
+2:04
+This is where we will append everything that happens
+2:07
+in that ReAct loop.
+2:10
+And to start it off, if there is this system message,
+2:13
+we're going to append a system message in this list of messages.
+2:19
+Okay great.
+2:19
+So our agent can now be initialized.
+2:22
+But what exactly is it going to do?
+2:25
+Let's implement the call method for this agent.
+2:31
+What we want this method to do at a high level
+2:33
+is to take a message that comes in, that is a string,
+2:36
+and then append that message to the existing array of messages.
+2:41
+We'll then execute a function will implement that right down below,
+2:45
+and we'll then take the result of that and add a new message
+2:49
+into the array of messages.
+2:51
+This time, coming from the assistant.
+2:54
+So let's implement that execute method.
+2:58
+In the execute method.
+3:00
+this is where we call the OpenAI client that we initialized above.
+3:04
+So we'll be using this GPT-4 model.
+3:06
+We'll be setting the temperature equals to zero.
+3:08
+This will make it very deterministic.
+3:10
+And we'll pass in this list of messages that will accumulate.
+3:13
+We'll then have this method return the content
+3:16
+or the string of the message that it gets back from the model.
+3:19
+So, this is our agent.
+3:21
+Awesome.
+3:23
+Now let's get started with creating the ReAct agent.
+3:25
+The ReAct agent is going to require a very specific system message.
+3:30
+So let's go ahead and write that out.
+3:31
+And we can take a look at that in detail to see exactly what we're doing.
+3:38
+Let's take a look at this prompt in more detail.
+3:40
+So we're asking it to run
+3:41
+through this loop of, thought, action, pause and observation.
+3:45
+It can then output an answer when it's finished with that loop.
+3:49
+It will use thought to describe its thoughts about the question
+3:52
+it's been asked.
+3:53
+It will then use action to run one of the actions available to it,
+3:57
+and it will then return pause. After that, observation
+4:02
+will be used to signal the result of running those actions.
+4:05
+We then tell it what the available actions are.
+4:08
+So we give it access to calculate an average dog weight.
+4:12
+And we'll implement those down below.
+4:14
+Finally, we then provide an example of this in action.
+4:18
+This example is really helpful for helping the language model understand.
+4:22
+And a little bit more specific detail how exactly it should be doing things.
+4:26
+And we can see here an example
+4:28
+trace. Incoming question and then a thought and then an action.
+4:33
+Then pause.
+4:35
+And then it gets back an observation.
+4:37
+And then we'll tell it to output.
+4:38
+Answer.
+4:42
+We now need to provide the two tools that we mentioned above.
+4:45
+So we have a calculate function.
+4:47
+And this just takes in a string.
+4:49
+And it will eval that string.
+4:51
+And then we have this average dog weight function.
+4:54
+And we're going to mock
+4:55
+with some returns for Scottish Terrier, border collie, toy poodle.
+4:59
+And then we'll create this little dictionary
+5:01
+that maps the name of the function to the function itself.
+5:04
+And we'll see how we'll use this down below.
+5:07
+Note that these functions are just a toy example.
+5:10
+And in your real use case, these are going to be more specific
+5:13
+to the problem that you're trying to solve.
+5:16
+Let's now try it out.
+5:18
+Let's initialize the agent with the prompt that we created above.
+5:23
+Let's then call it once with this initial question.
+5:25
+'How much does a toy poodle weigh?'
+5:29
+We look at the result and we can see that there's a thought action and pause.
+5:33
+So the thought is:
+5:34
+I should look up the dog's weight using average dog weight for a toy poodle.
+5:38
+It then outputs an action. And this is all one string.
+5:40
+But the second part is outputting this action
+5:42
+"Average dog weight, toy poodle."
+5:45
+And then it says pause.
+5:46
+What this means we should do is that we should look up using average dog weight.
+5:51
+How much a toy poodle weighs.
+5:53
+And so let's do that.
+5:58
+We get back this string,
+5:59
+and this is just what we mocked out above.
+6:07
+We can now format that into the next prompt to pass to the language model.
+6:13
+And then
+6:13
+we can call the agent with that next prompt.
+6:17
+Doing that we see that we get back.
+6:19
+Answer: "A toy poodle weighs 7 pounds."
+6:25
+If we want to see more details about what exactly has been going on,
+6:28
+we can take a look at the message attribute on the agent.
+6:34
+We can see that we first have this system message.
+6:37
+And this is the long prompt that we wrote out above.
+6:40
+We then have our first question "How much does a toy poodle weigh?"
+6:43
+We then have this response from the language model,
+6:46
+which tells us to take this action.
+6:48
+We then have our user message representing this observation
+6:52
+saying how much a toy poodle weighs.
+6:54
+And then we have the final assistant response,
+6:57
+which says our final answer that a toy poodle weighs 7 pounds.
+7:02
+Let's try this again with a different example.
+7:04
+In order to do that, we're going to need to reinitialize the agent
+7:08
+in order to clear all the messages that have already accumulated.
+7:12
+We're going to ask it a more complicated question this time.
+7:15
+"I have two dogs, a border collie and a Scottish Terrier.
+7:19
+What is their combined weight?"
+7:23
+We can see this first thought, is a really good plan.
+7:26
+It realizes that it first needs to find
+7:28
+the average weight of each breed, and then add those weights together.
+7:31
+And so the first action that it takes is calling average dog weight
+7:36
+with Border Collie.
+7:40
+Let's execute that action
+7:41
+and create the next prompt.
+7:44
+I can now call the agent on this next prompt.
+7:47
+I can see that it responds that we now need to take a different action.
+7:51
+We need to call average dog weight with Scottish terrier.
+7:54
+So let's do that.
+7:56
+We do that and create another
+7:57
+prompt which we can again pass to the agent.
+8:01
+This time it tells us to use the calculate
+8:04
+method with 37 plus 20.
+8:07
+Okay great.
+8:08
+Let's run that action.
+8:14
+We run that action and we get back another prompt,
+8:17
+which we can pass yet again into the agent.
+8:20
+Doing that, we get back a Final answer.
+8:22
+"The combined weight of a Border Collie and a Scottish Terrier is 57 pounds."
+8:27
+Now that is output the answer string.
+8:29
+we know that it's finished. So this is great.
+8:31
+We have a tool calling the agent, but it's still a little bit manual.
+8:35
+Let's automate it.
+8:36
+Let's put it in a loop.
+8:40
+The first thing I'm going to do
+8:42
+is create this regex for looking for the action string.
+8:46
+This is going to let us parse the LLM's response and determine
+8:50
+whether we want to be taking an action, or whether it's the final answer.
+8:56
+Let's now create this query function.
+8:59
+This is going to take in a question and run the same process
+9:02
+that we just ran manually.
+9:04
+I'll add this max turns parameter so we can control how long this runs for.
+9:09
+We can then start a counter to keep track
+9:12
+of how many iterations we've done.
+9:18
+We can initialize an agent
+9:20
+with the default system prompt.
+9:26
+We can then
+9:27
+define a query function, which we'll use to run this loop.
+9:30
+It'll take in a question.
+9:31
+And we'll also let it take in this max turns parameter,
+9:35
+which will control how many iterations the agent can run for.
+9:39
+We'll start a counter and we'll set this to zero.
+9:41
+We'll create a new agent
+9:43
+by initializing the agent class with the default system prompt.
+9:46
+We'll also create this next prompt variable to keep track
+9:49
+of what we should be passing to the agent, and set this equal
+9:52
+to the original question in order to start.
+9:55
+Let's now start our loop.
+10:05
+So while our
+10:05
+counter is less than max turns, we'll first increment the counter,
+10:10
+and then we'll call the agent and get a result back.
+10:15
+Let's add a print statement
+10:16
+just to see what that result is.
+10:20
+We'll then use the regex
+10:22
+that we created above in order to parse the response from the agent,
+10:27
+and we'll get back a list of actions.
+10:32
+Here's where we will decide
+10:34
+what to do based on the response.
+10:38
+So if there are any actions, we're going to add some logic
+10:42
+to take those actions and get back a response if there aren't any actions.
+10:45
+And this happens when the agent outputs answer,
+10:48
+Then we're going to return and end the function there.
+10:51
+So what exactly are we going to do?
+10:53
+If there are actions to take.
+10:57
+First,
+10:58
+we're going to get the action and the action input.
+11:00
+So the action is the function to call.
+11:02
+And the action input is the input to that function.
+11:06
+So we'll get those two things.
+11:08
+And then if we see an action that's not in our list of known actions
+11:12
+we're going to raise an exception. This should never happen.
+11:14
+But we'll we'll do this check and raise this exception just in case.
+11:18
+And let's print out what exactly we're going to be running here.
+11:22
+We'll now get the observation.
+11:25
+And so we'll do this by first looking up
+11:29
+in the action dictionary the action that we should take.
+11:33
+And so this action is a string right here.
+11:35
+We're looking it up in this dictionary.
+11:36
+And we're going to get back a function.
+11:38
+We're then calling that function on the action input.
+11:41
+And the result of that is what we're saving as observation.
+11:46
+Let's print out the observation just for some debugging.
+11:49
+And then let's also create the next prompt what we'll send to the language model
+11:53
+the next time.
+11:54
+And this is just a string with observation and formatted with the observation
+11:58
+that we got back from the agent.
+12:03
+All right.
+12:04
+Let's call this on the complex question that we had above
+12:07
+and see what happens.
+12:10
+We can see that it first thinks about what to do.
+12:14
+Outputs in action, calls
+12:15
+it, gets back an observation.
+12:17
+Thinks about what to do again and gets another action.
+12:19
+Thinks about what to do again, gets another action.
+12:21
+And then finally it comes up with this answer.
+12:24
+That was a lot easier than running it by hand.
+12:28
+That shows how we can create an agent
+12:30
+using nothing but the raw LLM API and some Python code.
+12:35
+In the next lesson, we'll take the same agent
+12:37
+and show how to implement it using LangGraph.
+12:41
+See you there.

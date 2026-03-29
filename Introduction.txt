@@ -1,0 +1,218 @@
+0:00
+Welcome to AI Agents and LangGraph.
+0:03
+Built in partnership with LangChain
+0:05
+and Tivoli. Taught by Harrison Chase, co-founder and CEO of LangChain,
+0:09
+as well as Rotem Weiss who is the co-founder and CEO of Tavily.
+0:13
+Harrison, it was not quite a year ago that we're working
+0:16
+on our first course on LLM frameworks.
+0:20
+And back, then we had an ancient example, but, you know,
+0:23
+it was a little bit of a struggle to get it to work.
+0:26
+Since then, I've seen many teams successfully build AI agents.
+0:30
+What was your view on that?
+0:32
+Yeah, that's exactly right, Andrew.
+0:34
+We've seen many people successfully building agentic applications now,
+0:38
+and I think there were a couple of key improvements over the last year.
+0:42
+First, function calling LLMs have made tool use much more predictable and stable.
+0:47
+And also specific tools like search have been adapted for agentic use. Yes.
+0:53
+If you think about it, when you do a query on a search engine,
+0:57
+it will return multiple links that you can then follow to find answers.
+1:00
+However, what an agent really wants
+1:02
+are answered that you can then reference to the link.
+1:06
+Also, the agent needs predictable formats for its results.
+1:10
+This is exactly what Agentic Search provides.
+1:12
+That makes sense.
+1:13
+And by the way, I'm personally a user of LangChain and Tavily.
+1:17
+And the reason for being excited is of both of you here.
+1:21
+And let me start by describing agents and agentic workflows.
+1:26
+let's say that the three of us are going to write a paper together.
+1:29
+Maybe I would start with some planning
+1:32
+and try to put together an initial outline of the paper.
+1:36
+Yeah.
+1:36
+And I can take it from there and do some research, maybe run
+1:39
+some queries and compile documents related to our topic.
+1:44
+Okay, I guess that leaves me to write the first draft.
+1:47
+I hope it's not a long paper.
+1:49
+Yeah, yeah. Short paper. Hopefully.
+1:51
+And then after that, I might veto the paper.
+1:54
+Try to make some constructive suggestions and hand it back to Harrison to see if he wants to
+1:59
+make some changes or to Rotem to see if he wants to do some more research.
+2:03
+and so on.
+2:05
+And this would be an example of an agentic or an agent
+2:09
+like workflow, in which we iterate to produce a work product.
+2:13
+And, in contrast to how people often use LLMs
+2:18
+to write essays today, which is served by the prompt and the,
+2:21
+write the essay for the first work to the last word in one shot.
+2:25
+This type of iterative workflow gives a much better work product.
+2:29
+In fact, as a person, I don't write that well.
+2:31
+If you force me to just write from start to finish with no backspacing allowed.
+2:36
+So concretely, you can similarly
+2:39
+prompt an LLM to tell it to write an outline, prompt an LLM
+2:43
+to write a draft or revise prompt an LLM to do research and so on.
+2:49
+But to dive a bit deeper, let me share what I think are some of the key
+2:52
+design patterns of agentic workflows.
+2:55
+First, I think there's planning, which is thinking through the steps
+2:58
+to take like the outline and what to do after that.
+3:02
+Then tool use. Knowing what tools are available
+3:05
+and how to use them, like our search tool. Reflection, which refers
+3:10
+to iteratively improve a result, possibly with multiple LLMs
+3:14
+critiquing and making useful suggestions to drive that type of editing cycle.
+3:18
+Multi-agent communication.
+3:20
+So you can think of each of us as playing a role again to an LLM
+3:24
+with a unique prompt to play a unique role in this process. And then memory,
+3:29
+that is tracking the progress and results over the multiple steps.
+3:33
+Now, some of these capabilities are related
+3:36
+to the LLM itself, like function calling for tool use.
+3:39
+But many of these capabilities are actually implemented outside the LLM
+3:43
+by the framework that they operate in.
+3:45
+Exactly.
+3:46
+And the LangChain framework has had many of these elements for some time.
+3:50
+Memory is available in multiple forms. Supporting
+3:53
+function calling, LLMs and tool execution are available.
+3:56
+And we talked about this in the last DeepLearning class
+3:59
+we did, functions tools and Agents course.
+4:03
+But LangChain has recently updated its support for agentic workflows.
+4:07
+Here's some examples of agents that we now better support.
+4:10
+So, ReAct agents was an early paradigm for building
+4:14
+agents, and ReAct stands for reasoning and action.
+4:17
+Another example that we recently added support for
+4:20
+is the example presented in the Self Refine paper,
+4:23
+where it does the iterative refinement that you were talking about.
+4:26
+And most recently, you can see the alpha coding example.
+4:30
+Which creates a coding agent using flow engineering.
+4:33
+And from all these diagrams you can see that these agents
+4:37
+and their behavior is defined by a cyclical graph. And to support
+4:42
+directly building agents like this, LangChain has extended to support LangGraph.
+4:48
+In this course,
+4:49
+you will start by building an agent from scratch with just an LLM
+4:53
+and Python.
+4:54
+Then, you'll learn about the components of LangGraph
+4:57
+by rebuilding that same agent using the LangGraph components directly.
+5:02
+Since search tools are such an important part of many agent applications,
+5:06
+you will learn the capabilities of agentic search and how to use it.
+5:11
+There are two additional capabilities that are helpful when building agents.
+5:15
+First, is being able to receive human input.
+5:17
+This allows you to guide an agent at critical points.
+5:21
+The second is persistence.
+5:23
+This is the ability to store the current state of information
+5:26
+so that you can return to it later.
+5:29
+This is great for both debugging agents and for
+5:32
+productionalizing them.
+5:34
+We will build a project using LangGraph,
+5:36
+but you'll have to reach the last lesson to figure out what it is.
+5:39
+And at the end, I'll describe some of the cool applications
+5:42
+and future directions I see for this technology.
+5:45
+Many people have worked to create this course from LangChain.
+5:49
+I'd like to thank Lance Martin and Nuno Campos. From Tavily,
+5:54
+Assaf Elovic And from DeepLearning.AI.
+5:57
+Geoff Ladwig.
+5:58
+All right.
+5:59
+We don't want to keep those agents waiting.
+6:01
+Let's go on to the next video to get started.

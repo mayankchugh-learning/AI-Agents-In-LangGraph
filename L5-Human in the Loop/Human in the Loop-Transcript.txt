@@ -1,0 +1,530 @@
+0:01
+There are many occasions when you would like to put a human in the loop
+0:05
+to keep tabs on what an agent is doing.
+0:08
+This is pretty easy to do with LangGraph.
+0:11
+Let's see how this works.
+0:13
+We're going to resume from where we left off in the last lesson.
+0:16
+So let's start by setting up our environment variables.
+0:22
+From there,
+0:23
+we can make all the relevant imports and set up our checkpointer.
+0:27
+We're now going to set up our agent state.
+0:30
+And we're going to make one small modification.
+0:34
+In the previous example,
+0:36
+we annotated the messages list with the operator.add.
+0:39
+That added messages to the existing messages array.
+0:44
+However, for these human-in-the-loop interactions,
+0:47
+we may want to actually replace existing messages.
+0:51
+In order to do that, we're going to write a custom reduced messages function,
+0:56
+that basically looks for messages with the same ID,
+1:00
+and if it sees that you're inserting one with the same ID
+1:02
+as one that already exists, it's just going to replace that.
+1:05
+Otherwise, it will append them.
+1:08
+After that, we create our same Tavily tool that we've been using.
+1:14
+And we can create our same agent.
+1:16
+We're actually going to make one small modification.
+1:19
+So when we compile the graph, in addition
+1:22
+to passing in the checkpointer,
+1:25
+we're also going to pass this interrupt
+1:27
+before equals action parameter.
+1:30
+What this is going to do
+1:31
+is it's going to add an interrupt before we call the action node.
+1:35
+So the action node is where we call the tools.
+1:38
+And so the reason that we're going to do
+1:40
+this, is we're going to add something that requires manual approval.
+1:44
+Before we run any tools.
+1:46
+This is useful when you want to make sure that tools are executed
+1:49
+correctly.
+1:53
+This interrupt happens
+1:55
+before we call the action node where all tools are called.
+2:00
+Sometimes you may only want to interrupt if a certain tool is called.
+2:04
+That's covered in other parts of the documentation,
+2:06
+and I encourage you to check that out later.
+2:11
+What's initialization with the same system
+2:14
+prompt and model and checkpointer that we've been using.
+2:18
+We now call it.
+2:19
+And we'll pass in this thread config using the thread ID of one.
+2:23
+Because this is a separate notebook, it'll start from fresh.
+2:28
+We stream back responses and we stop after this
+2:31
+AI message. This is because this AI message is saying that we should call it "tool",
+2:36
+but we have that interrupt before parameter which stops it
+2:40
+there.
+2:41
+One thing we can do from here is
+2:43
+get the current state of the graph for this thread.
+2:46
+So, in order to do that we'll pass in this thread config.
+2:51
+We'll get back this configuration object which has a few parameters.
+2:55
+We can see that the largest ones are this list of messages here.
+2:58
+This is the state of the graph.
+3:00
+At this point in time.
+3:04
+We can also see that it has a next parameter.
+3:07
+This is the node that is to be called "next".
+3:09
+We can see here that it's action.
+3:11
+This means that we're about to call the action node.
+3:16
+In order to continue, we can call stream again
+3:19
+with the same thread config and just pass in none
+3:23
+as the input.
+3:26
+This will stream back results and we will see that
+3:29
+we get the tool message from calling the tool.
+3:34
+And then we also get the final AI message.
+3:37
+Notice that there was no break in between the action node
+3:41
+and the LLM node, because we didn't add any interrupt there.
+3:47
+If we now get the state,
+3:48
+we can see that the messages list contains the full list of messages.
+3:57
+And if we get the next parameter, we can see that it's empty.
+4:00
+There's nothing left to be done.
+4:03
+For fun, we can write some code that runs this in a little loop
+4:06
+and prompts us for input about whether to continue or not.
+4:10
+We'll pass in a new thread ID, so we start afresh.
+4:15
+We get this little input box here asking us whether we want to proceed.
+4:19
+We can hit yes.
+4:20
+And then the agent continues on its way.
+4:24
+This is a good time to stop and try it out with other inputs.
+4:27
+Try adding different places to interrupt before and see what happens.
+4:32
+Before we get to the next section,
+4:34
+let's talk a little bit more about state memory.
+4:38
+As a graph is executing, a snapshot of each state is stored in memory.
+4:44
+What's in that snapshot?
+4:46
+Well there's the agent state which you've already defined.
+4:50
+And then there's some other useful things.
+4:52
+For example, there's a thread
+4:55
+and a unique identifier for each of the snapshots.
+4:58
+That's the thread TS right there.
+5:00
+You can use that to access the snapshots.
+5:03
+There's some commands to access memory.
+5:06
+There's get state which you've already seen.
+5:09
+If you provide the thread without the unique identifier
+5:13
+and just return that thread ID, it will return the current state.
+5:17
+There's also get state history, which returns an iterator
+5:22
+over all of the state snapshots.
+5:24
+You can use the iterator to get access
+5:27
+to all of the unique identifiers for each of the states.
+5:30
+What can you do with that?
+5:32
+Well, here's an example.
+5:34
+Given the thread identifier, or rather that thread TS the unique identifier,
+5:39
+you could, for example, access that first state, state one,
+5:43
+and use that in an invoke command. That will use state one
+5:47
+as the current state or the starting point for the rest of the graph.
+5:51
+This is effectively time travel.
+5:53
+Conversely, without that thread TS, if you just pass in the thread ID,
+5:58
+it will use the current state of the thread as the starting point.
+6:01
+You can also use that unique identifier
+6:04
+to access a particular state.
+6:07
+You can then modify that state,
+6:10
+and then you can use update state, to update the state
+6:13
+and store it back into memory in the location of the current state.
+6:18
+From there, if you run Stream or Invoke,
+6:21
+it'll use the new state, the modified state as a starting point.
+6:26
+All right.
+6:27
+You'll be seeing some examples of these in the upcoming section.
+6:30
+So let's get back to it.
+6:32
+Now let's show an example of modifying the state.
+6:36
+So let's start a new thread and let's ask it what's the weather
+6:39
+in LA?
+6:44
+At this point in the thread
+6:46
+we have two messages the human message and then the AI message
+6:50
+which is saying to search Tavily for current weather in Los Angeles.
+6:54
+But let's modify this.
+6:55
+Let's pretend we were instead asking about the weather in
+6:58
+Louisiana, not Los Angeles.
+7:01
+So how would we modify this to correct
+7:04
+the agent action?
+7:07
+First, let's save the current state of the graph
+7:10
+to a variable called current values.
+7:17
+The last message we have in this state is this AI message,
+7:21
+which is saying to search for a particular search term,
+7:24
+in this case, current weather in Los Angeles.
+7:31
+We can drill in even further
+7:32
+into see the list of tool calls associated with this message.
+7:38
+Let's now update these tool calls.
+7:41
+In order to do that, we can first get the ID associated with the tool call.
+7:45
+Well then update the tool calls property to be a list.
+7:49
+This list will have one element.
+7:51
+It's a dictionary.
+7:52
+It's got one tool call.
+7:54
+It's calling the Tavily search results json.
+7:56
+That's the same as before, but the arguments are different.
+7:59
+This time we have query with current weather in Louisiana.
+8:04
+This doesn't actually do anything until we call: update state on the graph.
+8:08
+We're going to pass in the thread config.
+8:11
+And this is so we know which thread we're operating on.
+8:13
+And we're going to pass in the new values that we want to override with.
+8:21
+If we get the current
+8:22
+state of the graph now we can see that we have this search term here.
+8:26
+Current weather in Louisiana.
+8:33
+If we continue from here, we can see that it calls Tavily
+8:37
+with the current weather
+8:38
+in Louisiana and gets back some response and then responds accordingly.
+8:42
+The current weather in Louisiana shows sunny conditions.
+8:45
+We've now shown how we can modify
+8:47
+the state of the graph in order to control what the agent does.
+8:51
+One important thing to note,
+8:52
+is that we're actually keeping a running list of all these states.
+8:57
+So when we modify the state, we actually created a new state.
+9:01
+And that became the new state.
+9:02
+And then every time we update it with results from the nodes,
+9:06
+it's actually creating a new state one after the other.
+9:09
+This is really nice because it actually allows us to go back
+9:13
+and visit previous states in something we're calling time travel.
+9:18
+So in order to do this,
+9:20
+we can call get state history on the graph passing in again
+9:24
+the thread ID. We'll then start building up this list of states over time.
+9:35
+If we get the last state
+9:37
+in this list, we can see that it's actually the earliest one.
+9:40
+And so this is the one where it was looking up the current weather
+9:44
+in Los Angeles.
+9:45
+This was the original state update that was made based on the first language
+9:49
+model call.
+9:50
+If we wanted to go back in time and resume from this checkpoint,
+9:54
+where it was looking for Los Angeles, we easily can.
+9:58
+In order to do that, all we have to do,
+10:01
+is call graph dot stream again, pass in none.
+10:04
+And now notice that we're passing in to replay dot config.
+10:09
+So to_replay is the state where we want to resume from.
+10:13
+And config is just the configuration parameters
+10:15
+that tell us that we're resuming from this state.
+10:18
+So if we run this, we'll start to see
+10:20
+that it's searching for the current weather in Los Angeles.
+10:23
+It's getting a result back from Tavily,
+10:26
+and then it's generating a response.
+10:28
+And that's our final answer.
+10:31
+One thing we can also do,
+10:32
+is go back in time and then edit it from there.
+10:36
+So here we have this to_replay config.
+10:39
+And this is where it's the current weather in Los Angeles.
+10:42
+So we can do the same thing that we did before
+10:45
+where we modify the state.
+10:51
+And so we'll modify this to do current weather
+10:53
+and LA AccuWeather presuming that we want a response from AccuWeather.
+10:57
+And the reason this is different than before is that here,
+11:00
+we're going back in time and then editing as opposed to before
+11:04
+where we were editing from the most recent state.
+11:09
+We can update the state of this
+11:11
+to_replay and we'll get back this branch state.
+11:14
+What we've branched off with this modification.
+11:21
+If we now
+11:21
+call graph dot stream with none on this branch state, we can see
+11:25
+that we're looking up AccuWeather and getting a result from there.
+11:29
+And we're getting back a new answer.
+11:30
+And then we're responding from the AI.
+11:36
+Another thing we can do,
+11:37
+is add messages to a state at any given point in time.
+11:41
+So here we have this to replay config which we've modified
+11:44
+to have the current weather in LA, AccuWeather.
+11:48
+Now let's presume that instead of actually calling Tavily,
+11:51
+we wanted to mock out a response.
+11:54
+We can do that by appending a new message into the state.
+11:58
+We're going to grab the ID
+12:01
+of the tool call that we're supposed to be making.
+12:05
+And we're going to create this state update, which is a list of messages.
+12:09
+And it's a new message
+12:10
+this time. It's got a tool call ID of this.
+12:13
+It's got a name of Tavily Search.
+12:14
+And it's got a content of 54°C.
+12:17
+So here this is a new message.
+12:19
+So when we update the state in the graph, it's not going to replace
+12:23
+an existing message,
+12:24
+it's going to append it to the list of messages.
+12:28
+We're now going to update the state of the graph.
+12:31
+But because we are actually adding and pretending that an action has taken
+12:35
+place, as opposed to modifying the existing state,
+12:38
+we need to do an additional thing.
+12:40
+we need to add this as node equals action parameter here.
+12:45
+What this is basically doing is it's saying that
+12:48
+the state update that we're making isn't just a modification.
+12:51
+We're actually making this update as if we were the action node.
+12:55
+The reason that this is relevant is because before we add this message,
+12:59
+the current state of the graph is about to go into the action node.
+13:03
+But after we add this message, we don't want it to go into the action
+13:07
+mode anymore.
+13:08
+So we're basically saying that when we update the state,
+13:10
+we're acting as if we were the action node.
+13:15
+If we now call
+13:16
+stream on this new configuration,
+13:19
+we can see that it doesn't take an action anymore.
+13:22
+Rather, it just calls the model and responds with this AI message.
+13:26
+The current weather in Los Angeles is 54°C.
+13:29
+This is what we pretended that the tool had responded with.
+13:33
+This has shown off a lot of really advanced
+13:35
+and complicated human-in-the-loop interaction patterns.
+13:39
+So you've learned how to add a break before a node takes place.
+13:43
+This allows for humans to approve or deny specific actions.
+13:48
+You've also shown how you can go back in time
+13:51
+and how you can modify the state, either the current state or the past state.
+13:56
+Additionally, you've also shown how you can update the state manually.
+14:01
+This allows you to manually give the agent
+14:04
+the result of calling a tool, rather than actually calling the tool itself.
+14:08
+All of these human-in-the-loop patterns
+14:10
+better serve to facilitate how you interact with agents.
+14:14
+They give you more control over what it's doing.
+14:17
+It allows you to go back to a previous point in time,
+14:19
+and by editing, it allows you to correct what it has done.
+14:24
+So far we've been working with a pretty simple agent.
+14:27
+It's got one LLM, one prompt, and it's got a pretty simple state.
+14:31
+Just a list of messages.
+14:32
+And the next and final example
+14:34
+in this course, we're going to create a much more complicated
+14:37
+agent made up of multiple LLM calls that has a pretty complex state.
+14:42
+See you there.

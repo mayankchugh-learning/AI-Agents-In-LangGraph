@@ -1,0 +1,174 @@
+https://github.com/langchain-ai/langgraph/tree/main/examples/multi_agent
+
+https://github.com/langchain-ai/langgraph/blob/main/examples/plan-and-execute/plan-and-execute.ipynb?ref=blog.langchain.dev
+
+https://github.com/langchain-ai/langgraph/blob/main/examples/lats/lats.ipynb
+
+0:00
+Congratulations.
+0:01
+You now have a good hand on how to build your own agents.
+0:04
+With what you have learned today,
+0:06
+you can build simple or quite complex agents.
+0:09
+But before we go, I wanted to cover some of the agent flows
+0:13
+that we couldn't build today,
+0:15
+but I think you should know about.
+0:19
+The first architecture I want to talk
+0:21
+about is a multi-agent architecture.
+0:24
+And we covered this a little bit with the writing agent.
+0:26
+But just to make it a little bit more concrete.
+0:30
+A multi-agent architecture is when multiple different
+0:33
+agents work on the same shared state.
+0:36
+And so these agents could be just a prompt and a language model
+0:40
+as they were in the writer.
+0:42
+They could also have different tools that they could call this.
+0:45
+And that could be a prompt, a language model and tools.
+0:47
+And they could actually have their own loops inside them.
+0:51
+The crucial thing here,
+0:52
+and the differentiator between the next thing that we'll see
+0:55
+is that they all work on the same shared state.
+0:58
+So they're passing that around from one agent to the next.
+1:03
+Let's contrast that with a supervisor agent.
+1:06
+So here we have a supervisor which is calling into some sub-agents.
+1:11
+And here the supervisor will actually determine what the input to that agent is.
+1:14
+And those agents themselves could have different states inside them.
+1:18
+There are graphs.
+1:20
+And so there's not necessarily the same concept of a shared state.
+1:24
+Other than that this is pretty similar to the multi-agent framework.
+1:28
+It just really emphasizes that there's this one supervisor
+1:32
+that's in charge of routing and coordinating these other agents.
+1:36
+This is often good
+1:37
+when you can use a really powerful language model as the supervisor.
+1:41
+Because doing this supervision, doing this planning requires a lot of intelligence.
+1:46
+One term that's popped up a bunch recently is flow engineering.
+1:50
+This comes from an AlphaCodium paper,
+1:52
+where they achieve state of the art coding performance.
+1:56
+And they do it with a very graphical like solution like this.
+2:01
+And so looking at it you can see that it's basically a pipeline.
+2:05
+But there are a few key nodes where there's actually a loop.
+2:10
+So there's loops on the initial code solution.
+2:13
+There's loops when you iterate on public tests
+2:15
+and there's loops when you iterate on AI tasks.
+2:18
+And so this is an interesting graph because you have
+2:21
+this very directed flow up until a certain point.
+2:24
+And then you have these iterations.
+2:27
+This is a really bespoke
+2:30
+architecture for a particular coding problem.
+2:33
+But the concept of flow engineering extends more broadly,
+2:37
+and it generally refers to thinking of what is the right information
+2:41
+flow for your agents to take action and think.
+2:45
+In that vein.
+2:47
+A common paradigm is to have
+2:50
+a plan and execute style flow
+2:53
+where first, you do an explicit planning, step upfront
+2:57
+and then you start to execute on that plan.
+3:00
+So you may come up with a few steps that a sub-agent should go do.
+3:04
+It can then go do one come back.
+3:06
+Maybe you update the plan, maybe you don't.
+3:08
+This is where there are some different variants,
+3:10
+but then it goes on to the next thing and it does that
+3:13
+and it comes back until it finishes the plan.
+3:16
+Then you maybe check to see
+3:18
+if the plan is successfully accomplished or whether you need to replan.
+3:22
+And then if all is good, you return to the user.
+3:25
+The final one I want to touch on is a really interesting
+3:27
+paper called Language Agent Tree Search.
+3:31
+So this basically does a tree search over the state of possible actions.
+3:36
+And so it first generates an action.
+3:37
+It then reflects and then goes down based on that action
+3:41
+and generates some other sub-actions reflects on that.
+3:44
+And throughout all these reflections it can basically reflect
+3:47
+on where in the tree of action states it wants to jump back to.
+3:52
+So it can backpropagate and update parent nodes to have more information,
+3:56
+which may inform future directions from that previous state.
+4:01
+For this in particular, you can really see why persistence is really important,
+4:06
+because you need to be able to go back in time to previous states.
+4:11
+These are just some of the
+4:12
+emerging paradigms for creating more complex agentic flows
+4:16
+LangGraph is really aimed at being highly controllable
+4:20
+and allowing you to create these cyclical or non cyclical flows.
+4:25
+This degree of controllability is really what differentiates it
+4:29
+from other frameworks, and it's what we're really excited about going forward
+4:34
+as we view this to be crucial to creating agents that actually work.

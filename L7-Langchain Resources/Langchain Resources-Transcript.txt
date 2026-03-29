@@ -1,0 +1,70 @@
+0:01
+Look, we have only covered some of the basics here today.
+0:04
+I want to point out where you can find some more information
+0:07
+to continue your agent journey.
+0:11
+We've covered a lot of info.
+0:12
+Here are some of my favorite resources
+0:15
+for diving deeper into all that we just talked about.
+0:18
+The LangChain documentation is a great place to start.
+0:22
+Specifically, it provides a great high level overview
+0:25
+of all the packages and services in the LangChain ecosystem.
+0:29
+So we break down the different LangChain
+0:32
+core packages as well as all the LangChain community packages.
+0:36
+So we used Tavily as part of LangChain community.
+0:39
+And then we also use LangChain OpenAI which is a separate partner package.
+0:43
+But we have a ton of other integrations and you can explore those here.
+0:47
+LangChain itself is more high level and covers agents and other chains
+0:51
+and different retrieval strategies that are good high-level entry points.
+0:54
+If you just want to get started.
+0:56
+We also have a bunch of templates that can be deployed easily with LangServe
+1:01
+LangServe's just a really easy way to turn your LangChain application into a web server.
+1:06
+Helping out with all of this is LangSmith from the beginning,
+1:09
+LangSmith can help with debugging, and then it can also help
+1:13
+with monitoring in production.
+1:14
+And it also has a playground which we saw earlier.
+1:17
+Looking at a few other sites.
+1:19
+The LangChain GitHub repo has a lot of good resources,
+1:22
+a lot of good cookbooks, and a lot of templates for getting started.
+1:26
+The LangGraph repo, of course,
+1:28
+has in-depth documentation on LangGraph, everything that we just covered.
+1:32
+So great reference docs, great tutorials, and great how-to guides.
+1:38
+We've also done previous courses on LangChain
+1:41
+with DeeLearning.AI, that I'd highly recommend checking out.
+1:43
+In particular, Functions, Tools and Agents with LangChain,
+1:47
+is a really good precursor to this lesson.
+1:51
+We already saw the prompt hub once, but just to reiterate, this is a great place
+1:56
+to go to get inspiration and see what other expert prompters are doing.

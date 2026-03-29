@@ -1,0 +1,200 @@
+0:01
+A frequently used tool in agents is search.
+0:04
+This lesson is going to dive into how agentic
+0:06
+search is different from standard search and how to use it.
+0:10
+Let's try it out.
+0:13
+All right, so before diving into what an agentic search
+0:16
+does, let's understand how an agent might use it. In a zero
+0:19
+shot learning an agent would receive a prompt and will produce
+0:23
+an answer based on its static weights of the model.
+0:26
+As powerful as it's proven to be,
+0:28
+there are many limitations to this process.
+0:31
+First, the data on this is dynamic.
+0:34
+So we couldn't, for instance, ask about the scores from the game last night.
+0:39
+Secondly, in many use cases, we would want to know
+0:42
+the sources of the information provided in the result.
+0:45
+This can reduce hallucinations and smooth
+0:48
+the friction of this human-computer interaction.
+0:51
+Looking at the slide, we can see the prompt
+0:53
+is received by the agent, which then decides to call the search tool.
+0:57
+Then the information found is returned to the agent.
+1:01
+Now, let me show you what happens inside.
+1:04
+This is an
+1:05
+example of a very basic search tool implementation.
+1:08
+Let's go over it step by step.
+1:10
+If the agent decides it will send the query to the search tool,
+1:14
+the first step would work on understanding the question
+1:17
+and divide it to sub-questions if needed.
+1:20
+This is an important step because it can handle complex queries.
+1:25
+Then, for each subquery, the search tool will have to find the best source.
+1:29
+Choosing from multiple integrations.
+1:32
+For example, if an agent would ask "How is the weather in San Francisco?"
+1:37
+The search tool should use the weather API for best results.
+1:41
+the job doesn't end with finding the correct source.
+1:44
+The search tool would
+1:45
+then have to extract only the relevant information to the subquery.
+1:49
+A basic implementation of this can be achieved through a process
+1:53
+of chunking the source, and run a quick vector search to retrieve the top-K
+1:57
+chunks. After retrieving the data from its source,
+2:01
+the search tool would then score the results and filter
+2:04
+out the less relevant information.
+2:07
+Okay, so let's test it out.
+2:10
+Okay.
+2:10
+So first, let's import some libraries
+2:12
+and do the initial connection to the search tool.
+2:16
+Here we loaded Tavily API key from the environment variable.
+2:20
+And then we created the Tavily client
+2:23
+which we imported from the Tavily library.
+2:26
+All right, so after creating the initial connection, let's test it out.
+2:31
+Here, I'm going to run this search asking about Nvidia's new Blackwell GPU.
+2:36
+And let's see what's the answer.
+2:39
+All right.
+2:39
+As you can see there's a pretty simple answer but very accurate.
+2:45
+Okay, so let's do a simple example to see the difference
+2:49
+between a regular search tool and an agentic search tool.
+2:52
+I'm going to create a simple query about the weather in a certain location.
+2:58
+Feel free to change the location to your location.
+3:01
+I'm going to do it with San Francisco.
+3:04
+So, the query is "What is the current weather in San Francisco?
+3:07
+Should I travel there today?"
+3:09
+Now, let's try to attempt it with regular search.
+3:16
+Here, I'm going to import the DuckDuckGo search.
+3:19
+I'll try to run a regular search and get the links.
+3:23
+The links that might lead me to the answer.
+3:27
+Okay.
+3:27
+So as you can see, we did get the results, but it's not what the agent meant.
+3:32
+Now we're going to have to get some answers from these results.
+3:36
+Let's do that.
+3:41
+Okay.
+3:41
+So now we're going to create the function
+3:43
+that can scrape the data from the first URL.
+3:46
+We're going to use Beautifulsoup to extract the html.
+3:54
+As you can see that's a beautiful output.
+3:56
+And if you want you can keep scrolling down.
+3:59
+But let's try to clear it up.
+4:02
+Okay.
+4:03
+To clear it out, I'm going to use some parsing.
+4:05
+I'm going to extract the headers and some content.
+4:09
+I'm going to strip it down and use a join to get the text.
+4:14
+As you can see, the output is much, much better,
+4:17
+but still not concise enough.
+4:20
+Okay.
+4:21
+After seeing this let's try to run it using the agentic search tool.
+4:26
+We're going to do the same query and call the Tavily
+4:29
+to get the results.
+4:31
+As you can see, we got a simple json
+4:35
+with a lot of information about the weather in San Francisco.
+4:39
+Let's clear it out so we can see a formatted json.
+4:42
+Okay, now we'll parse it and highlight
+4:45
+the json just so we can see it clearly.
+4:49
+As you can see, this is not the answer I would want to see as a human.
+4:53
+But this is the exact answer
+4:55
+an agent would want, a structured data.
+4:59
+Okay I'm going to load the sample from Google Search so you can see the difference.
+5:05
+Here.
+5:06
+I get exactly what I want to see as a human.
+5:09
+A nice image showing me the temperature, the humidity, the wind.
+5:14
+But not unnecessary data.
+5:16
+That's exactly the difference between what a human needs and what an agent needs.
+5:21
+Okay.
+5:22
+That was an introduction to agentic search.
+5:24
+In the next lesson, Harrison will discuss persistence and streaming.

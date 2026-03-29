@@ -1,0 +1,740 @@
+0:01
+In this lesson, you'll build a project with a bit more scope.
+0:05
+We'll build a compact version of an AI researcher, in this case, an essay writer.
+0:11
+Let's get to it.
+0:14
+So we're going to create an essay writer.
+0:16
+This is going to be broken down into a few different substeps.
+0:20
+So first we're going to generate a plan for the essay.
+0:23
+This is going to happen once upfront.
+0:26
+Then based on that plan we're going to do some research.
+0:29
+This involves calling Tavily and getting back some documents.
+0:33
+From there we're going to go into generate, and then generate.
+0:36
+We're going to follow the plan using the documents that we researched.
+0:40
+And we're going to write the essay.
+0:42
+From there, we're either going to finish or we're going to continue.
+0:46
+If we continue, we're going to go into a reflect node where
+0:49
+we're going to generate a critique of the current essay.
+0:52
+Then based on that critique, we're going to do another research step
+0:56
+with Tavily, and get another set of documents.
+1:00
+We're going to append those to the existing set of documents
+1:03
+and go all the way back to the generate step,
+1:07
+where we're going to once again try to write this essay.
+1:10
+And we're going to continue this until some criteria is met and we exit.
+1:15
+Let's see this in code.
+1:19
+We're going to start with again
+1:21
+importing all our environment variables.
+1:26
+We're then going to make some standard imports
+1:28
+and set up our in-memory SQLite checkpointers.
+1:31
+Now we're going to create the agent state.
+1:33
+And it's going to be a little bit more complicated than before.
+1:38
+So we're going to want to keep track of a bunch of different things.
+1:42
+First, we're going to keep track of the task.
+1:44
+This is the human input.
+1:45
+This is what we're trying to write an essay about.
+1:47
+Then we're going to have a key to keep track of the plan.
+1:50
+This is the plan that the planning agent will generate.
+1:54
+Then we've got a key for the draft.
+1:56
+This is a draft of the essay.
+1:58
+And then we've got a key for the critique part.
+2:00
+So the critique agent will populate this key.
+2:03
+We're also going to add in content.
+2:06
+This is a key to keep track of the list of documents
+2:08
+that Tavily has researched and come back with.
+2:11
+And then we're going to have two arguments that keep track of
+2:14
+how many times we've gone through this.
+2:16
+So revision number, which is going to keep track of the number
+2:19
+of revisions we've made and max revisions, which is keeping
+2:23
+track of the maximum revisions that we want to make.
+2:27
+We're going to use those last two things
+2:29
+and the criteria to decide whether to stop or not.
+2:35
+Let's create our model.
+2:36
+We're going to be using OpenAI.
+2:38
+And now let's write some prompts for our agents.
+2:42
+First, we have this planning prompt.
+2:45
+This is the prompt for the LLM that's going to write out a plan
+2:48
+for our essay.
+2:51
+Next, we have the writer prompt.
+2:53
+This is the one who's writing the essay.
+2:55
+Given all the content that was researched.
+3:02
+We now have the reflection prompt.
+3:04
+This is the prompt that's going to control how we're critiquing
+3:07
+the draft of the essay.
+3:11
+We now have a prompt that we're going to use
+3:13
+for the agents that's doing research after the planning step.
+3:16
+So given a plan, we're going to generate a bunch of queries and pass these to
+3:21
+Tavily. So this is the prompt that does that.
+3:25
+And then we also have this research critique prompt.
+3:28
+So after we've made the critique we're going to generate a list of queries
+3:32
+to pass it to Tavily.
+3:33
+So this is slightly different than the planning prompt
+3:35
+just because it's working on a critique versus a plan.
+3:38
+But it serves a similar purpose.
+3:41
+For generating these lists of queries to pass to Tavily.
+3:44
+We're going to use function calling to ensure that we get back
+3:47
+a list of strings from the language model.
+3:52
+In order to do that, we're going to set up this pydantic model
+3:55
+that just represents the result that we want to get back from the language
+3:59
+model, which in this case, is a list of strings.
+4:04
+We're going to import the Tavily client instead of the tool,
+4:07
+because we're working with it in a slightly unconventional way.
+4:11
+Now we can start to
+4:12
+create all our different agents, all our different nodes.
+4:16
+Let's go in order.
+4:16
+So first we're going to start with the node or agent that does the planning.
+4:22
+What this node is going to do it's going to take in the state.
+4:25
+It's then going to create a list of messages.
+4:27
+One of them is going to be the planning prompt.
+4:29
+That's going to be the system message. We're then going
+4:31
+to create a human message.
+4:32
+That is the task that we want to do.
+4:34
+We're going to pass that to the model.
+4:36
+We're going to get back a message.
+4:38
+And then we're
+4:38
+going to take the content of that message and set that equal to plan.
+4:42
+And so this is going to update the plan key to be this response.
+4:47
+The next node that we're going to want to do
+4:50
+is the agent that takes in the plan and does some research.
+4:54
+So for this, we're going to create the research plan node.
+4:57
+This is going to take in the agent state.
+4:59
+And we're first going to generate some queries.
+5:01
+So we're going to do model.
+5:02
+And this is the OpenAI model.
+5:04
+And then we're going to say with structured output
+5:06
+and put queries right there.
+5:08
+And so this is basically saying that the response
+5:10
+of what we're going to invoke this with is going to be
+5:14
+that pydantic object that we had, which has that list of queries.
+5:18
+So we're going to call invoke and we're going to call invoke
+5:20
+on a list of messages.
+5:21
+We've got this research planning prompt.
+5:23
+And then we pass in this human message this task.
+5:26
+And so for this part, we're generating the queries based on the task.
+5:31
+We're then going to get our list of current documents,
+5:34
+the content documents that we're going to use to write this essay.
+5:38
+So we're going to look in the state for content
+5:40
+if it exists or if it doesn't exist.
+5:43
+We're just going to create an empty list of documents.
+5:46
+We're then going to loop over the queries that we generated and search
+5:49
+for them in Tavily.
+5:50
+We're going to get back the results and we're going to append them to the content.
+5:54
+We're then going to return this content key equal to the content that is
+5:59
+the result of the original content, plus the accumulated content.
+6:05
+Okay.
+6:05
+So we've made a plan and we've done some initial research.
+6:08
+Now it's time to write the first draft.
+6:12
+So for the generation node, the first thing we're going to do
+6:15
+is to prepare the content.
+6:16
+So we're going to take this list of strings and join them into one big one.
+6:21
+We're then going to create the user message,
+6:23
+where we're going to combine the task and the plan.
+6:26
+So we create a user message, that's basically like "this is my task.
+6:30
+And then here is my plan."
+6:32
+The plan,
+6:33
+remember, this is what we generated two steps before.
+6:36
+The task is the original user input.
+6:39
+We're then going to create a list of messages.
+6:41
+This is a system message with the writer prompt where we format in this content.
+6:46
+We format in the documents that we fetched.
+6:48
+And then we're going to pass in this user message,
+6:50
+which is a combination of the task and the plan.
+6:53
+We're going to pass this to the model and get back a response.
+6:56
+We're then going to update two things in the state.
+6:59
+First, we're going to update the draft.
+7:01
+So we're going to take the response from the model
+7:03
+and use that as the new draft version.
+7:06
+Then we're going to update the revision number.
+7:07
+So this keeps track of how many revisions we've made.
+7:11
+And so here we're going to add one
+7:13
+to the current revision number in the state.
+7:18
+After generating
+7:20
+we now need a reflection node.
+7:23
+This reflection node
+7:24
+is going to take the reflection prompt as a system prompt.
+7:28
+And it's going to take the draft.
+7:29
+This is what we just generated.
+7:31
+We're going to have these two messages.
+7:32
+And we're going to pass them into the model and get back a response.
+7:35
+And this is going to generate the critique that we're going to update the state.
+7:41
+The last agent we need,
+7:43
+is the agent that's going to take the critique and do some research.
+7:47
+So we're going to do a very similar thing that we did with the research plan node.
+7:51
+We're going to take this model we're going to do with structured output with query.
+7:55
+So that's returning queries. We're going to invoke it.
+7:57
+This time we're passing in the research critique prompt.
+8:00
+And we're also passing in the critique from before.
+8:03
+Based on that we're going to get the current content list.
+8:06
+And we're going to start appending to it the Tavily searches.
+8:10
+We're then going to return this updated content key.
+8:14
+The final thing we need is this 'should continue' condition.
+8:17
+This is going to look at the revision number.
+8:19
+And if it's greater than the number of max revisions, we're going to end.
+8:23
+If not, we're going to go on to reflect.
+8:25
+Remember this is getting run after the generation step.
+8:29
+So after the generation step we're either going to finish
+8:32
+or we're going to go into this critique loop.
+8:35
+Okay.
+8:35
+We made all our agents all our little nodes.
+8:38
+We made our conditional edge.
+8:40
+Now let's put it together into one big graph.
+8:45
+First, let's initialize the graph
+8:47
+with the agent state.
+8:51
+Let's then add
+8:52
+in all the nodes that we created.
+8:55
+We then need to set an entry point.
+8:57
+So the entry point here is going to be the planning node.
+9:01
+Let's then add in our conditional edge.
+9:04
+So after generate, we're going to call the should continue function.
+9:07
+And we're either going to end or we're going to reflect.
+9:09
+And so here, if the should continue condition returns and we're going to end.
+9:13
+If it returns reflect we're going to go to the reflect node.
+9:16
+We now need to add in the basic edges.
+9:19
+So after planning, we're going to go to the research plan node.
+9:22
+After research plan, we're going to go to generate generates already covered above.
+9:26
+then after reflect we're going to go to research critique.
+9:29
+And after research critique we're going to go back to generate.
+9:36
+Let's now compile it.
+9:36
+And we'll pass in the checkpointer that we created before.
+9:41
+We can visualize this.
+9:42
+Same as before.
+9:43
+It's a much more complex graph.
+9:50
+All right.
+9:50
+So let's use this writing agent.
+9:53
+Let's call graph.stream.
+9:55
+So we can see all the steps that are happening.
+9:56
+Because this is going to take a while.
+9:58
+And we really want that visibility. Let's pass in a task.
+10:01
+Let's ask it what is the difference between LangChain and LangSmith.
+10:05
+I don't think GPT-3.5 knows about any of these.
+10:08
+And then let's pass in max revisions equals two.
+10:11
+And let's passion revision number equals one.
+10:13
+So it is starting on the first revision.
+10:15
+And we want it to make two revisions of what it's going to do.
+10:19
+Let's call this and it's going to start getting to work.
+10:22
+So we can see that it generates a plan.
+10:24
+First.
+10:27
+It then does some research.
+10:28
+It gets back a bunch of documents.
+10:32
+It's now got a first draft.
+10:33
+So we can see that it generated a title unveiling the distinctions LangChain
+10:37
+versus LangSmith.
+10:38
+And it started writing.
+10:42
+Here we can see the critiquing that the agent did.
+10:45
+The essay provides a clear overview blah blah blah, with
+10:49
+here are some recommendations.
+10:50
+It would benefit from a deeper analysis of the strengths and weaknesses.
+10:53
+Okay, great.
+10:54
+Now we can go to planning.
+10:55
+So here we have the research critique node.
+10:58
+This is done research based on the critique of the agent.
+11:02
+Here we get to generate again.
+11:04
+This is the second draft.
+11:05
+And we've only told it to do two drafts. So this is the final one.
+11:08
+It ends after this.
+11:09
+And we can see the final essay that we get.
+11:11
+LangChain versus LangSmith.
+11:13
+We can see some more details on what LangChain is, what LangSmith is.
+11:18
+Some talk about scalability, incorruptibility, performance.
+11:23
+We've now created this writer agent.
+11:26
+This is a great time to go back and try it out with different questions.
+11:29
+Maybe have it write a few different revisions,
+11:32
+see how it performs, mess around with the prompts.
+11:34
+There's a lot that you can change here to see how this overall
+11:38
+writing agent responds.
+11:42
+We built a little GUI that you can use to try out the Essay Generator.
+11:47
+Here's how it works.
+11:50
+You can put in a topic here,
+11:52
+and then you can hit this button, Generate Essay.
+11:58
+That will invoke your graph.
+12:01
+And it will go and it will run off and it'll start the generation process.
+12:05
+And as you can see we stopped.
+12:07
+We stopped at the planner node.
+12:10
+Last node was planner.
+12:12
+Next node was research.
+12:14
+We're in thread zero.
+12:16
+We're doing our first draft with a count of one.
+12:19
+We've taken one step in our graph.
+12:22
+So why do we stop?
+12:23
+Well if you look in "manage agent" we have this interrupt after state set.
+12:28
+So you may recall from code what that looks like.
+12:32
+So when we're compiling the graph,
+12:35
+we have "interrupt after set" for each of the states.
+12:40
+after each state it'll stop.
+12:42
+And what we'll do is in the GUI logic
+12:45
+it'll come back and it'll to see if that state is checked.
+12:49
+And if it is, it will stop.
+12:52
+And if it's not, then it will continue.
+12:54
+And so you can uncheck these and continue all the way through the process.
+12:59
+Now we stopped the planner.
+13:00
+So we should have a plan at this point.
+13:02
+Let's take a look.
+13:03
+Sure enough there's our introduction.
+13:05
+But if we look at our research content for example
+13:08
+we don't have any. And same for draft and for critique.
+13:11
+There's also this tab the state snapshot.
+13:14
+So this is giving us a view into the current memory.
+13:18
+This just lists all the things in memory.
+13:22
+We can see that there were two initial states inserted by the graph logic.
+13:26
+And then there was this state that we just inserted.
+13:29
+It was the tasks, the pizza shop.
+13:32
+The last node we're in and the values of the agent state at this point in time.
+13:37
+The last node is planner.
+13:39
+Our plan was "briefly introduce
+13:41
+the topic of pizza shops and the popularity" and so on.
+13:44
+We don't have any drafts, etc.
+13:47
+So that's our current state.
+13:49
+Now you may want to do something a little bit different than this introduction.
+13:54
+Let's say what you really wanted to talk about
+13:57
+was discuss
+14:00
+the importance of jelly donuts
+14:05
+in pizza making.
+14:07
+Now, this is a bit nonsensical, but you can now update the state
+14:11
+if you hit this modify button,
+14:13
+that will run the update state command that we had seen earlier.
+14:18
+And we can go in and take a look and see what happened.
+14:21
+So we can refresh our state snapshots.
+14:24
+And here's the state we were in previously.
+14:26
+And now we have a new state.
+14:28
+The current state.
+14:30
+And here we have
+14:33
+our plan is "discuss
+14:34
+The importance of jelly donuts in pizza making".
+14:37
+And so we can continue from here if we go back to the front end,
+14:40
+and if we hit Continue Essay.
+14:42
+as opposed to generate,
+14:44
+then we continue on the path of the thread that we've already started.
+14:49
+Okay.
+14:50
+So now we're at the research plan.
+14:51
+The next note is generate.
+14:53
+Let's go ahead and click continue and we'll generate a draft.
+14:57
+Let's take a look at the draft.
+14:59
+And if we refresh we can see
+15:01
+the last node which generate the thread IDs zero there in one.
+15:05
+Step four.
+15:07
+And so if we read this we can see "Jelly donuts.
+15:10
+A beloved treat in many cultures hold a surprising significance
+15:13
+in the world of pizza making.
+15:18
+What a surprise".
+15:23
+Let's go back to our agents.
+15:27
+Well, we could continue this,
+15:30
+but you may have had second thoughts
+15:33
+about this whole pizza making and jelly donuts connection.
+15:37
+So maybe we want to go back to the beginning.
+15:40
+So with this update state from Tab,
+15:43
+you can go back to the original planner state.
+15:48
+And that just didn't update the state.
+15:49
+So if we go take a look at our state snapshot,
+15:55
+that pushes onto the memory,
+15:58
+the state that we had selected.
+16:01
+And that's back to our original
+16:04
+plan.
+16:04
+"The briefly introduced the topic of pizza shops and their popularity".
+16:09
+So we can go back to there and then we can
+16:11
+then run from there.
+16:14
+And so let's unclick those two things and run all the way to generate.
+16:18
+Click continue essay
+16:20
+and see what happens.
+16:25
+All right.
+16:26
+So the last note is generate.
+16:28
+So now we can look at a draft.
+16:29
+Let's refresh.
+16:31
+"Pizza shops have become a staple
+16:33
+in the food industry offering a wide variety of options".
+16:37
+Blah blah blah.
+16:37
+And so we don't have any more references to jelly donuts and pizza making.
+16:43
+If you decide
+16:44
+to do a different topic, for example,
+16:48
+let's say you want to do a topic on New England IPAs.
+16:52
+So you can change that value and then hit Generate Essay.
+16:56
+Now you're starting a new topic.
+16:58
+So you start a new essay.
+17:01
+What happens here,
+17:03
+is we get the live agent output down here.
+17:07
+And we're going to go all the way to generate,
+17:09
+because we didn't have those to interrupt.
+17:11
+After states selected.
+17:15
+Now you'll notice
+17:15
+that we have two different threads to choose from.
+17:18
+We have thread zero which is a pizza shop, and then one
+17:22
+which is the New England IPA topic.
+17:25
+And our New England IPA, only has a couple of states here.
+17:30
+So you can explore essay making with this GUI.
+17:33
+More importantly, is to understand what's happening to memory state
+17:37
+and how the graph is being run.
+17:40
+If you want the details, you
+17:41
+can go into the helper.py file and all the code is there.
+17:45
+It's a little long,
+17:47
+but you can use that as the basis for your own project.
+17:52
+We've covered a lot in these past six lessons,
+17:55
+but it's honestly just the start of building agents.
+17:59
+In the next section, we'll do a quick overview
+18:02
+of some resources that you can peruse in your own time after the course
+18:05
+to get an even deeper understanding.

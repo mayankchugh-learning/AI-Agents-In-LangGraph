@@ -1,0 +1,336 @@
+0:00
+When building agents, they're often working on
+0:03
+longer running tasks. For these types of tasks,
+0:07
+there are two really important concepts.
+0:10
+Persistence and streaming.
+0:12
+Persistence lets you keep around the state
+0:15
+of an agent at a particular point in time.
+0:18
+This can let you go back to that state and resume in that state
+0:21
+in future interactions.
+0:23
+This is really important for long running applications.
+0:26
+Likewise, with streaming,
+0:29
+you can emit a list of signals of what's going on at that exact moment.
+0:34
+So for long running applications, you know exactly what the agent is doing.
+0:38
+Let's see these concepts in action.
+0:41
+So to get started, let's create our agent
+0:43
+as we did before.
+0:47
+We'll load in the appropriate
+0:48
+environment variables.
+0:53
+We'll make the necessary imports.
+0:57
+We'll create our Tavily search tool again.
+1:02
+We'll create our agent state.
+1:07
+And finally, we'll create our agent again.
+1:09
+Now we're going to add in persistence.
+1:12
+In order to deal with persistence,
+1:14
+we've added the concept of a check pointer into LangGraph.
+1:19
+A check pointer basically checkpoints
+1:21
+the state after
+1:23
+and between every node.
+1:25
+To add in persistence for this agent,
+1:27
+what we'll do is we'll use a SqliteSaver.
+1:30
+So this is a really simple check pointer that we've added that uses
+1:34
+Sqlite, a built in database under the hood.
+1:37
+And we'll just use the in-memory database.
+1:40
+So if we refresh this notebook it'll disappear.
+1:43
+But you can easily connect this to an external database
+1:46
+or we also have other check pointers that use Redis
+1:50
+and Postgres and other more persistent databases like that.
+1:55
+Once we initialize this check pointer, the way that we can use
+1:58
+it, is we're going to pass it in to graph.compile.
+2:03
+So in order to make this easy, let's add another parameter to agent.
+2:06
+That is check pointer.
+2:09
+And then we're just going to pass check pointer
+2:12
+equals check pointer
+2:15
+right here. And we've modified our agent.
+2:17
+This is all we're going to need to do.
+2:22
+We can now create our agent.
+2:23
+And we're going to pass in checkpoint equals memory.
+2:25
+And remember memories.
+2:26
+The object that we initialized above.
+2:30
+When we use our agent
+2:31
+now, we're also going to add the concept of streaming.
+2:34
+And there's two things that we might care about.
+2:37
+Streaming.
+2:38
+First, we might care about streaming
+2:40
+the individual messages.
+2:42
+So this would be the AI message that determines what action to take.
+2:46
+And then the observation message that represents the result
+2:50
+of taking that action.
+2:52
+The second thing we might care about streaming is tokens.
+2:55
+So for each token of the LLM call we might want to stream the output.
+3:00
+To begin we're just going to start by streaming only the messages.
+3:03
+We'll do the tokens later on in the lesson.
+3:07
+So we're going to create our human message.
+3:09
+"What is the weather in SF?"
+3:11
+This is the one we ran before.
+3:13
+We're now going to add this concept of a thread config.
+3:17
+So this will be used to keep track of different threads
+3:20
+inside the persistent checkpointer.
+3:23
+This will allow us to have multiple conversations going on at the same time.
+3:27
+This is really needed for production applications
+3:30
+where you generally have many users.
+3:32
+This thread config is simply a dictionary with a configurable key.
+3:37
+And as part of that, we have a thread id and we can set that equal to any string.
+3:41
+Here we're going to set that equal to one.
+3:46
+We're now going to call the graph
+3:48
+not with invoke, but with stream.
+3:51
+We're going to pass in the same messages dictionary.
+3:54
+And we're also going to pass in this thread config as a second parameter there.
+3:58
+We're then going to get back a stream of events.
+4:01
+These events represent updates to that state over time
+4:05
+because we know our state only has one key,
+4:08
+the messages key.
+4:10
+We're just going to loop through it and print that out.
+4:13
+So let's run this and see what happens.
+4:18
+We can see
+4:18
+that we get back a stream of results.
+4:21
+First, we get back an AI message.
+4:24
+This is the first result from the language model.
+4:26
+And it's telling us to call Tavily.
+4:29
+Next, we get back a tool message.
+4:32
+This is the result of calling to Tavily.
+4:34
+And it has the results from the search.
+4:37
+And finally, we get back a third AI message.
+4:39
+This is the final result from the LLM answering our question.
+4:44
+With this stream method, we get back all of these intermediate results,
+4:48
+and we have really good visibility into what exactly is going on.
+4:54
+Let's now call it with another message.
+4:56
+This time we're going to say "What about in LA?"
+4:59
+So this is continuing the same conversation that we had before.
+5:02
+It's asking a follow-up question.
+5:04
+We don't say anything
+5:05
+explicitly about the weather, but based on it being a conversation,
+5:09
+we would expect it to realize that we're asking about the weather here.
+5:13
+In order to make sure that we're continuing from that same point,
+5:17
+we're passing in the same thread ID here.
+5:21
+If we run this,
+5:24
+we can see that it returns first a function call,
+5:27
+where it's looking for current weather in Los Angeles.
+5:31
+Again, it's knowing that we asked about the weather
+5:34
+because it has this persistence from the checkpointer.
+5:38
+We can then see that it's getting back results from
+5:41
+Tavily.
+5:43
+And finally, that is responding with an AI message
+5:47
+that says the current weather in Los Angeles is blah blah blah.
+5:54
+We can call this yet again
+5:56
+using the same thread ID with the message, "Which is warmer?"
+6:00
+Here it has access to the full history so it can accurately respond.
+6:04
+Los Angeles is currently warmer than San Francisco.
+6:11
+Just to demonstrate the importance of this thread ID.
+6:14
+Let's change this to be two.
+6:18
+If we run this now.
+6:20
+we can see that the language model is really confused.
+6:23
+"Can you please specify the two or more items
+6:26
+you are comparing to determine which is warmer?"
+6:28
+That's because it doesn't have access to any history.
+6:32
+And that's because we're using a separate thread ID.
+6:36
+So we've covered the importance of persistence.
+6:38
+And we've showed how you can stream events.
+6:41
+But what about streaming tokens themselves.
+6:44
+For that, we're going to want to use the A-stream
+6:47
+events method that comes on all LangChain and LangGraph objects.
+6:53
+A-stream event is an asynchronous method,
+6:56
+which means that we're going to need to use an async checkpointer.
+7:02
+In order to do this.
+7:03
+We can import async SqliteSaver and pass that to the agent.
+7:08
+This is very similar to before.
+7:10
+It's just swapping out a synchronous SqliteSaver with an async SqliteSaver.
+7:16
+This allows us to use async methods on
+7:18
+the graph.
+7:21
+We'll use a new thread id,
+7:23
+so this will start the conversation from fresh.
+7:26
+We're also going to be iterating over a different type of event.
+7:29
+These events represent updates from the underlying stream.
+7:34
+What we want to do, is we want to look for events
+7:37
+that correspond to new tokens.
+7:40
+These kind of events are called on chat model stream.
+7:45
+When we see these events happening, we want to get the content
+7:48
+and print it out.
+7:49
+And we'll print it out with this type delimiter.
+7:52
+When we run this, we should see it streaming real time into the screen.
+8:05
+So we can see a few things here.
+8:07
+First, we can see that it called the function under the hood.
+8:11
+The reason it didn't stream out anything there, is
+8:14
+there's actually no content to stream.
+8:16
+It was just a function call.
+8:18
+But then we can see that when it did get to the final response
+8:22
+and it is returning a final answer, we stream out those tokens one at a time.
+8:27
+We can see that we've got this little funny pipe delimiter here,
+8:30
+but we could easily remove that in our production application if we wanted to.
+8:35
+So that's it for persistence and streaming.
+8:38
+Pretty simple to get started with, but really powerful
+8:41
+for building production applications.
+8:43
+You're going to want your agents to be able to have multiple conversations
+8:47
+at the same time,
+8:48
+and have a concept of memory so they can resume those conversations.
+8:52
+And you're also going to want them to be able to stream both the final tokens,
+8:57
+but also all of the messages that came before.
+9:01
+Persistence is also really important for enabling human in the loop
+9:05
+type interactions, and that's exactly what we're going to cover in the next lesson.

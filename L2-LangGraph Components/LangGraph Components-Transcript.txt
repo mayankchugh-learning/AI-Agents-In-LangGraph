@@ -1,0 +1,720 @@
+0:01
+In the last lesson, you built an agent from scratch.
+0:05
+Now let's implement the agent using the LangGraph.
+0:09
+And along the way, introduce some of its components and features.
+0:13
+All right.
+0:14
+Let's get coding.
+0:17
+All right, so let's break down what exactly we did in the last lesson.
+0:21
+We had this user message that came in.
+0:23
+We then had the system prompt.
+0:25
+And this was this very long one.
+0:27
+We then called an LLM along with that.
+0:30
+This output something like what's right
+0:32
+there, a thought and an action.
+0:35
+Based on that, we then made a decision.
+0:37
+We would either return or we would call a tool,
+0:42
+and we put this all in a big loop.
+0:43
+This query function.
+0:45
+And we had these two tools that we would call "calculate an average dog weight."
+0:50
+And if we called
+0:50
+the tool we would get back an observation.
+0:53
+And then we'd loop back in, to the prompt
+0:56
+and would put that observation as a new message.
+1:00
+So let's break this down into LangChain components.
+1:03
+First, let's talk about prompts.
+1:05
+So prompt templates allow reusable prompts.
+1:09
+And what this basically means is that we can create something like this, right here,
+1:15
+a little string with some formatted variables that we can replace.
+1:19
+And so those formatted variables can come from user content.
+1:22
+So we can have this prompt template that we format in different ways
+1:26
+depending on the user content.
+1:28
+If you want to see a bunch of examples of these prompt templates,
+1:31
+you can actually see them in the LangChain hub.
+1:34
+So here is one that's very similar to the agent prompt that we just used.
+1:39
+So you can see here it says "answer the following question as best you can."
+1:42
+You have access to the following tools.
+1:44
+And here we don't hardcode the tools themselves.
+1:47
+But we have this little variable.
+1:49
+And the same with tool names down here.
+1:52
+And then we have the input here.
+1:53
+And this is the user question. And then the agent scratchpad.
+1:56
+And these are all the actions it takes.
+1:58
+And the observations.
+2:00
+If you want to see more prompts you can go to the hub here.
+2:02
+And you can see a bunch of prompts that people in the community have contributed.
+2:07
+The next component in LangChain that we have is tools.
+2:10
+So here's a Tavily tool.
+2:12
+And this is the search that we will be using from here on out.
+2:15
+You can see that we import it from the LangChain
+2:17
+community package which contains hundreds of other tools.
+2:21
+Maybe the biggest part of this application,
+2:24
+the most code that we wrote, was this function that would loop.
+2:28
+And that's represented by all these arrows, here.
+2:32
+And that's one way to think about LangGraph.
+2:34
+LangGraph helps you describe and orchestrate that control flow.
+2:38
+Specifically, it allows you to create cyclic graphs,
+2:42
+which is exactly what we have here.
+2:44
+It also comes with built-in persistence.
+2:47
+And this is really nice for having multiple conversations
+2:50
+at the same time, or remembering previous iterations and actions.
+2:54
+This persistence also enables really cool human in the loop features.
+3:00
+If you look at these diagrams here, and these are all diagrams
+3:03
+of agents from academic papers, these are all represented as graphs.
+3:08
+And that realization was what led us to create LangGraph,
+3:12
+an extension of LangChain specifically aimed at agent and multi-agent flows.
+3:18
+Crucially, it allows for really controlled flows.
+3:22
+So in these diagrams there's really specific
+3:25
+arrows leading from one box or state to the next.
+3:29
+We've seen that this controllability is crucial for creating agents
+3:33
+that can perform well.
+3:35
+Three of the core concepts of
+3:37
+LangGraph are nodes, edges, and conditional edges.
+3:42
+Nodes are agents or functions.
+3:45
+Edges connect these nodes, and then conditional edges are used
+3:49
+when you need to make decisions about which node you should go to next.
+3:55
+So let's take a look at an example of a LangGraph you can create
+3:59
+that is equivalent to the function that we wrote in the lesson before.
+4:04
+We can have an agent node. This is the LLM.
+4:07
+We can then have a conditional edge which takes the result
+4:10
+of that LLM call and decides what to do next.
+4:13
+One of those edges can be an action edge which calls a function node,
+4:18
+and that automatically loops back to the agent node.
+4:21
+There's an entry point, which is where you start, and then there's
+4:25
+the end node, which is the other action available to take after the agent.
+4:30
+One of the most important things to understand when working with
+4:32
+LangGraph is the state that is tracked over time.
+4:36
+This is often called the agent state.
+4:38
+This is accessible at all parts of the graph at each node in each edge.
+4:44
+It is local to the graph and it can be stored in persistence
+4:47
+layer, meaning that you can resume with that state at any point in time,
+4:52
+later on.
+4:53
+Looking at two examples, we first have a simple state
+4:58
+where we just have this list of messages. Taking a closer look,
+5:03
+we can see that this message variable is a sequence of base message. Base Message
+5:08
+is a LangChain type.
+5:09
+It's annotated with operator.add.
+5:13
+This means that when the state is updated with new messages,
+5:17
+it doesn't override the existing messages, but rather it adds them to that state.
+5:24
+Let's take a look at a more complex state.
+5:27
+Here we have input, chat history, agent outcome, and intermediate steps.
+5:32
+They all have their own different type.
+5:34
+Three of them are not annotated in any way.
+5:37
+This means that when a new update is pushed to that variable,
+5:41
+it overrides the existing value there.
+5:44
+However, intermediate steps is annotated.
+5:48
+It's annotated with operators.add, which means that
+5:52
+when a new update is pushed there, it adds to it.
+5:56
+This makes sense because intermediate steps is what is tracked
+5:59
+as the agent action and agent observation throughout the graph as it executes.
+6:04
+And so we want to continuously add to that as more and more actions are taken.
+6:08
+Getting really specific about the previous agent
+6:11
+that we created and how that would map to a LangGraph object.
+6:15
+We can see that we will have one node.
+6:18
+We'll call this call OpenAI.
+6:20
+And this will call the LLM.
+6:22
+We'll then have a conditional edge which will check for the existence
+6:26
+of an action to take.
+6:27
+And so we'll call this 'exists action'.
+6:29
+And then we'll have another node which actually executes that action.
+6:32
+We'll call that 'take action'.
+6:34
+And the state that will track is pretty simple.
+6:36
+It's just this list of messages to which we add over time.
+6:40
+With that high-level overview.
+6:42
+Let's dive into the code.
+6:44
+Let's first load in any environment variables that we're going to need to use.
+6:47
+This is our OpenAI API key.
+6:52
+We're now going to import
+6:53
+a bunch of things that we need to create these tools.
+6:56
+Agent state. And the LangGraph itself.
+7:00
+First, let's import state graph and this end node from LangGraph.
+7:04
+We'll see how we'll use those later on.
+7:06
+These typing imports and operator are used to construct the agent state.
+7:10
+We then have all these different message types.
+7:12
+These are LangChain message types that we'll use to represent the human
+7:17
+in AI and system messages. From LangChain OpenAI,
+7:21
+we're going to import chat OpenAI.
+7:23
+This is a LangChain wrapper around the OpenAI API.
+7:27
+This is exposes a standard interface for all language models,
+7:31
+meaning that even though we're going to use chat OpenAI for this lesson,
+7:35
+we can actually switch it out for any of the language model providers
+7:38
+that LangChain supports without having to change any other lines of code.
+7:43
+Finally, we're going to import Tavily, the search engine
+7:46
+that we're going to start using as the tool. In this example.
+7:51
+Let's first take a look at the tool.
+7:53
+We'll create the tool by initializing
+7:56
+Tavily search results with max results equals two.
+7:59
+This means that will only get back two responses from the search API.
+8:04
+We can see that it's of this type and it's got a specific name to
+8:08
+tavily_search_results_json.
+8:11
+This is the name that the language model will use to call this tool.
+8:16
+Let's now create the agent state.
+8:18
+This is exactly what was in the presentation.
+8:21
+It's just an annotated list of messages
+8:23
+that we will add to over time.
+8:27
+Let's now create our agent.
+8:29
+As discussed, we're going to need three functions.
+8:31
+We're going to need one function to call OpenAI.
+8:34
+One function to check whether there is an action present
+8:37
+and another function to take that action.
+8:41
+These will all be different methods on this agent class.
+8:44
+So let's create those first.
+8:46
+And we can then see how they interact with each other.
+8:51
+Let's now create the agent class.
+8:53
+We're going to want this agent to be parametrized by three different things.
+8:57
+A model to use, the tools to call,
+9:00
+and the system message as before.
+9:02
+Let's save the system message as an attribute.
+9:07
+We're now going to start creating the graph.
+9:10
+First, let's initialize state graph with the agent state.
+9:17
+Right now this graph is pretty bare.
+9:19
+It doesn't have any nodes or edges attached to it.
+9:21
+We know that we're going to want to create those three functions before
+9:25
+and use them two as nodes and one as edges.
+9:28
+So let's sketch it out
+9:29
+and then we'll implement those functions as methods on the class.
+9:33
+So first we know that we're going to want to create a node
+9:36
+called LLM which will execute the LLM.
+9:40
+And we can do that by doing graph,
+9:43
+add node,
+9:46
+LLM.
+9:48
+And then we're going to come back here.
+9:49
+And we're going to need to pass in the function that we want to represent
+9:52
+this node.
+9:54
+We'll add another node, the action node.
+9:56
+We'll do the same thing here.
+9:59
+Now we're going to add that conditional edge.
+10:02
+This goes after the LLM is called.
+10:04
+It checks whether there's an action present.
+10:07
+If there is then it goes to the action node.
+10:09
+If there isn't then it goes to the end node and it finishes.
+10:13
+So let's add this again.
+10:15
+We'll have to add the specific functions later on.
+10:20
+The first argument
+10:21
+we pass in is the node where the edge starts.
+10:24
+This is from LLM.
+10:27
+The second argument we pass in
+10:29
+is the function that'll determine where to go
+10:32
+after that.
+10:33
+We're going to implement this later on
+10:34
+so we'll leave this blank.
+10:41
+The third and final argument
+10:43
+that we're going to pass in, is a dictionary representing
+10:47
+how to map the response of the function to the next node to go to.
+10:52
+So if the function returns true then we're going to go to the action node.
+10:56
+If it returns false then we're going to go to the end node.
+11:06
+We're now going to add a regular edge.
+11:08
+This is going to go from the action node to the LLM node.
+11:12
+So we can do this by calling Add edge.
+11:13
+The first argument is the start of the edge.
+11:16
+The second argument is the end of the edge.
+11:24
+We're then going to set an entry point for the graph.
+11:27
+This is at the LLM node.
+11:32
+With that done, we can compile the graph.
+11:35
+Graph.compile is just what we need to call
+11:37
+after we've done all the setups and we'll turn it into a LangChain runnable.
+11:42
+A LangChain runnable exposes a standard interface for calling
+11:45
+and invoking this graph.
+11:47
+Well, we'll see more about that later on.
+11:49
+We'll save this as an attribute on the class.
+11:53
+We'll also save the tools and the model that we passed in.
+11:59
+For the tools,
+11:59
+we'll create a dictionary mapping the name of the tool
+12:02
+to the tool itself.
+12:07
+For the model,
+12:08
+we'll actually call bind tools on the model
+12:11
+passing in the list of tools that we passed into the agent.
+12:15
+What this is doing is this is letting the model know
+12:18
+that it has these tools available to call.
+12:21
+All right.
+12:22
+So we've created this graph.
+12:24
+But we still need to create three things.
+12:26
+We need to create the function representing the LLM node.
+12:30
+We need to create another function representing the action node.
+12:33
+And we need to create a third function representing this conditional edge.
+12:37
+We'll add all of these as methods on this
+12:40
+agent class.
+12:43
+For the LLM node,
+12:45
+we're just going to create a function called call OpenAI.
+12:48
+It's going to take in this state this agent state all the nodes and the edges.
+12:53
+We'll take this. Then
+12:55
+what we'll
+12:55
+do is we'll get the list of messages from the state.
+12:58
+We'll then add in the system message and we'll then call the model.
+13:03
+We'll then return this dictionary with a list of messages.
+13:06
+But there's only one message in it.
+13:07
+It's the message that's returned from the model.
+13:10
+Again, remember because we had annotated the messages
+13:14
+attribute on the agent state with the operators.add,
+13:18
+this isn't overwriting this.
+13:20
+It's adding to that state.
+13:22
+We can then go back to the graph.add node and change that to pass
+13:26
+in this method.
+13:27
+Let's now do the same for the action node.
+13:31
+The action node will also take in this agent state.
+13:34
+We'll get the last message from the list of messages.
+13:38
+We know that if we've gotten to this state, the language
+13:41
+model must have wanted to call some tools.
+13:44
+That means that there will be this tool calls attribute present
+13:48
+on the last message in the agent state.
+13:51
+Crucially, this can actually be a list of tool calls.
+13:54
+So, a lot of the more modern models
+13:56
+support parallel tool or parallel function calling.
+13:59
+What we can now do is we can loop over these tool calls.
+14:03
+We can find the relevant tool by looking up
+14:06
+tool name in the dictionary of tools that we created.
+14:10
+We can then call invoke on it
+14:13
+passing in the arguments that we have from this tool call.
+14:17
+We can then append this as a tool message to this results list.
+14:21
+And then we're returning these messages mapping to these results thing.
+14:26
+Again, this is just the new messages that we need to add.
+14:30
+What's happening under the hood is that LangGraph is adding that
+14:33
+to the state in between iterations.
+14:36
+Let's go back up and let's put this here, in the action node.
+14:46
+Finally, we need to define our conditional edge.
+14:49
+So, this is what's going to take in the result after the LLM is called.
+14:53
+And return a boolean either true or false, representing
+14:56
+whether we should take an action or whether we shouldn't.
+14:59
+In order to do that, we're just going to get the last message
+15:02
+from the state, which is the most recent call from the language model,
+15:06
+and we're going to return length of that message dot tool calls greater than zero.
+15:12
+So basically if there's any tool calls we're going to return
+15:14
+"True".
+15:15
+If there's none, then we're going to return "false".
+15:18
+Let's set this as the conditional edge.
+15:22
+And with that we have our agent.
+15:23
+So let's start to use it.
+15:27
+We create a nice little system prompt here.
+15:29
+We initialize chat OpenAI.
+15:31
+So this is the language model we're going to use.
+15:33
+And for our list of tools that we're passing in,
+15:35
+we're just passing in our one, our Tavily search tool.
+15:40
+One of the cool things we can do
+15:42
+is we can actually visualize this graph we just created.
+15:45
+So if we get the graph and then called docket graph and then
+15:49
+.draw_png, we actually get an amazing visualization of the graph itself.
+15:54
+This is all done automatically.
+15:59
+So let's now call this agent.
+16:01
+So let's first call it with this:
+16:03
+"What is the weather in SF?" Question.
+16:05
+In order to do this,
+16:07
+we're going to create this human message representing a user message.
+16:11
+We're then going to put it in this list of messages.
+16:14
+And note that we have to do this because the state that the agent expects
+16:18
+to work with has this messages attribute, which is a list of messages.
+16:22
+So we need to make it conform with that state.
+16:26
+Once we have this input, we can call the agent.graph.invoke
+16:29
+with this and we can get back a result.
+16:34
+So we added some print statements in the agent.
+16:37
+And so we can see that it printed out what it was calling
+16:40
+and it was calling Tavily search, results, json.
+16:43
+And it was calling it with current weather In SF, San Francisco.
+16:47
+And then it prints out back to the model.
+16:48
+This means we're going back to the model. If we look at result.
+16:52
+If we look at
+16:53
+result we can see that it's a list of messages.
+16:56
+So result, is the final state that the agent ended up in.
+17:00
+If we just want to get the final message in this list of messages,
+17:04
+we can go into the messages attribute.
+17:10
+Get the last one and look at the content attribute.
+17:13
+And we can see that the current weather in San
+17:15
+Francisco is partly cloudy, blah blah blah.
+17:18
+Let's now try this with a more complicated question.
+17:21
+So "What is the weather in SF and LA?"
+17:25
+We can see that it first calls Tavily search results json.
+17:29
+With the current weather in San Francisco.
+17:31
+Then before even going back to the model, it calls Tavily
+17:35
+search results json again, with current weather in Los Angeles.
+17:39
+This is an example of parallel function or tool calling.
+17:42
+Finally, it goes back to the model and after that, it has all the information,
+17:46
+it needs.
+17:46
+So it responds.
+17:47
+And if we look at the final message.
+17:52
+We can see that we get back a response
+17:54
+for both San Francisco and Los Angeles.
+17:58
+Let's try an even more complicated question.
+18:01
+"Who won the Super Bowl in 2024?"
+18:04
+"What is the GDP of that state?"
+18:08
+We can see
+18:09
+first, it calls Tavily with the query 2024 Super Bowl winner
+18:14
+and then goes back to the model.
+18:16
+It then calls Tavily again, this time with the query
+18:19
+"GDP of Missouri 2023."
+18:22
+Then goes back to the model.
+18:24
+And finally, it's done.
+18:26
+And if we look at the final response, we can see that we get.
+18:29
+"The Kansas City Chiefs won the Super Bowl in 2024 for the GDP of Missouri,
+18:33
+where the Kansas City Chiefs are based, was 400 something billion.
+18:38
+And the third quarter of 2023."
+18:41
+So the
+18:41
+difference here is that in order to make the second query,
+18:45
+it actually had to know the result of the first query.
+18:48
+So it calls one tool,
+18:51
+then goes back to the model in order to enable it to call the second tool.
+18:55
+This is a little bit different from parallel function calling.
+18:57
+And it's not happening in parallel. It's happening sequentially.
+19:00
+And the reason it's happening sequentially, is it actually needs
+19:03
+the result of the first query, in order to make the second query at all.
+19:07
+With this, we've seen how we can take
+19:10
+that raw LLM and raw Python example with some fake tools
+19:13
+and turn it into a real agent that can answer complex questions.
+19:17
+Under the hood, it's using the Tavily search API.
+19:20
+In the next lesson, we'll learn a lot more about that.
